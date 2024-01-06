@@ -19,6 +19,10 @@ from keras.losses import BinaryCrossentropy
 
 import tensorflow as hub
 
+from sklearn import metrics
+from keras.models import load_model
+from sklearn.metrics import confusion_matrix, classification_report
+
 data_directory = pathlib.Path('pizza_not_pizza')
 class_names = [item.name for item in data_directory.glob('*')][:2]
 print(class_names)
@@ -93,6 +97,61 @@ history_1 = model_1.fit(train_data,
                         validation_data = val_data,
                         validation_steps = len(val_data))
 
+def plot_loss_curves(history):
+    """
+    Plots the curves of both loss and accuracy
+    """
 
+    loss = history.history['loss']
+    val_loss = history.history['val_loss']
 
+    accuracy = history.history['accuracy']
+    val_accuracy = history.history['val_accuracy']
+
+    epochs = range(len(loss))
+
+    fig, ax = plt.subplots(1, 2, figsize = (20, 5))
+
+    # Plotting loss
+    ax1 = sns.lineplot(x = epochs, y = loss, label='Training Loss', ax= ax[0])
+    ax1 = sns.lineplot(x = epochs, y = val_loss, label='Validation Loss', ax= ax[0])
+    ax1.set(title = 'Loss', xlabel = 'Epochs')
+
+    # Plot accuracy
+    ax2 = sns.lineplot(x = epochs, y = accuracy, label='Training Accuracy', ax= ax[1])
+    ax2 = sns.lineplot(x = epochs, y = val_accuracy, label='Validation Accuracy', ax=ax[1])
+    ax2.set(title = 'Accuracy', xlabel = 'Epochs')
+
+plot_loss_curves(history_1)
+
+print("\n Adding a Max Pooling layer")
+
+model_2 = Sequential([
+    Input(shape = (224, 224, 3)),
+    Conv2D(filters = 32, kernel_size = 2, padding = 'valid', activation = 'relu'),
+    MaxPool2D(pool_size = 2), # It will reduce the number of features by half
+    Conv2D(filters = 32, kernel_size =2, padding = 'valid', activation = 'relu'),
+    MaxPool2D(pool_size = 2),
+    Flatten(),
+    Dense(1, activation = 'sigmoid')
+])
+
+model_2.compile(loss = BinaryCrossentropy(),
+                optimizer = Adam(),
+                metrics = ['accuracy'])
+
+history_2 = model_2.fit(train_data,
+                        epochs= 5,
+                        steps_per_epoch = len(train_data),
+                        validation_data = val_data,
+                        validation_steps = len(val_data))
+
+plot_loss_curves(history_2)
+
+predictions = model_2.predict(val_data)
+predicted_classes = tf.argmax(predictions, axis=1)
+true_classes = val_data.classes
+
+print("Confusion Matrix")
+print(confusion_matrix(true_classes, predicted_classes))
 
