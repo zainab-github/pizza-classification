@@ -43,6 +43,7 @@ train_data = data_gen.flow_from_directory(data_dir,
                                           batch_size = 32,
                                           subset = 'training',
                                           class_mode = 'binary')
+
 val_data = data_gen.flow_from_directory(data_dir,
                                         target_size = (224, 224),
                                         batch_size = 32,
@@ -97,30 +98,33 @@ history_1 = model_1.fit(train_data,
                         validation_data = val_data,
                         validation_steps = len(val_data))
 
+predictions = model_1.predict(val_data)
+predictions = tf.argmax(predictions, axis=1)
+true_classes = val_data.classes
+
+confusion_matrix = metrics.confusion_matrix(true_classes, predictions)
+
+print("Confusion Matrix")
+cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix = confusion_matrix, display_labels = [False, True])
+cm_display.plot()
+plt.show()
+
 def plot_loss_curves(history):
-    """
-    Plots the curves of both loss and accuracy
-    """
-
-    loss = history.history['loss']
-    val_loss = history.history['val_loss']
-
-    accuracy = history.history['accuracy']
-    val_accuracy = history.history['val_accuracy']
-
-    epochs = range(len(loss))
-
-    fig, ax = plt.subplots(1, 2, figsize = (20, 5))
-
-    # Plotting loss
-    ax1 = sns.lineplot(x = epochs, y = loss, label='Training Loss', ax= ax[0])
-    ax1 = sns.lineplot(x = epochs, y = val_loss, label='Validation Loss', ax= ax[0])
-    ax1.set(title = 'Loss', xlabel = 'Epochs')
-
-    # Plot accuracy
-    ax2 = sns.lineplot(x = epochs, y = accuracy, label='Training Accuracy', ax= ax[1])
-    ax2 = sns.lineplot(x = epochs, y = val_accuracy, label='Validation Accuracy', ax=ax[1])
-    ax2.set(title = 'Accuracy', xlabel = 'Epochs')
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['Train', 'Validation'], loc='upper left')
+    plt.show()
+    # summarize history for loss
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['Train', 'Validation'], loc='upper left')
+    plt.show()
 
 plot_loss_curves(history_1)
 
@@ -149,9 +153,12 @@ history_2 = model_2.fit(train_data,
 plot_loss_curves(history_2)
 
 predictions = model_2.predict(val_data)
-predicted_classes = tf.argmax(predictions, axis=1)
+predictions = tf.argmax(predictions, axis=1)
 true_classes = val_data.classes
 
-print("Confusion Matrix")
-print(confusion_matrix(true_classes, predicted_classes))
+confusion_matrix = metrics.confusion_matrix(true_classes, predictions)
 
+print("Confusion Matrix")
+cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix = confusion_matrix, display_labels = [False, True])
+cm_display.plot()
+plt.show()
